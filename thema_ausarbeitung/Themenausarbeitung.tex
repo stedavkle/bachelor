@@ -16,30 +16,31 @@
 	\section{Einführung}
 	\subsection{Einsatzfeld}
 	Die Mikromanipulatoren von Kleindiek, werden meist zur Fehleranalyse bei Transistoren auf Computerchips eingesetzt.\\
-	Dies geschieht hauptsächlich in Rasterelektronenmikroskopen.
+	Dies geschieht hauptsächlich im Rasterelektronenmikroskop.
 	\subsection{Geräte}
 	Es wird ein \href{https://www.kleindiek.com/ps4.html}{PS4}/\href{https://www.kleindiek.com/ps8.html}{PS8} von Kleindiek in einem Gemini SEM von Zeiss betrieben.\\
-	Die Anzahl der Nadeln kann variieren zwischen 1 und 8.\\
-	Dabei werden Bilder im $nm$ Bereich mit einer Auflösung von 1024x768 und ca. 3 FPS aufgenommen.\\
+	Die Anzahl der Nadeln kann variieren -zwischen 1 und 8.\\
+	Dabei werden in stufenlos einstellbarer Vergrößerung vom mm bis in den $nm$ Bereich Bilder mit einer Auflösung von 1024x768 und ca. 3 FPS aufgenommen.\\
 	Sie befinden sich im TIF Format.\\
 	Im Header der Bilddateien befinden sich Informationen über den Zustand des Mikroskops (Parameter).
 	\subsection{Probingablauf}
 	Nach einmaligem Kalibrieren, können die Nadeln bis auf einen Bereich von $10\mu m$ zuverlässig zusammengefahren werden.\\
-	Nun muss - unter ständiger Kontrolle - langsam die Vergrößerung erhöht werden und die Nadeln händisch immer näher aneinader gefahren werden.\\
+	Nun muss - unter ständiger visueller Kontrolle - langsam die Vergrößerung erhöht werden und die Nadeln händisch immer näher aneinander gefahren werden.\\
+	Die XY Positionen der Nadeln liest man aus dem REM Bild ab. Die Höhe der Nadeln und Probe ermittelt man über den Fokus und die Tiefenschärfe des REMs.\\
 	Hierbei ist darauf zu achten, dass sich die Nadeln nicht berühren, da sie sich sonnst verbiegen können.\\
-	Sobald alle Nadeln auf gleicher Höhe und in einem gewünschten Radius sind, kann die Stage des REM, auf dem sich die Probe befindet, bis auf $500 nm$ an die Spitzen angehoben werden.\\
+	Sobald alle Nadeln auf gleicher Höhe und in einem gewünschten Radius sind, werden alle Nadeln etwa 10$\mu$um angehoben.\\
+	Anschließend wird die Probe mittels der Stage des PSX auf etwa 10$\mu$um Abstand zu den Nadeln angehoben.\\
 	Nun werden die Nadeln über die Kontaktflächen gebracht und vorsichtig auf der Probe abgesetzt.\\
-	Den Touchdown erkennt man daran, dass sich die Nadelspitze um ein kleines Stück nach vorne bewegt.
+	Den Touchdown erkennt man an einer Kontraständerung oder daran, dass sich die Nadelspitze um ein kleines Stück nach vorne bewegt.
 	
 	\section{Ziel der Arbeit}
-	\subsection{Problem}
-	Das stetige manuelle kontrollieren und positionieren der Nadeln nimmt viel Zeit in anspruch.
-	Außerdem ist es eine große Verantwortung, da schnell ein großer Schaden entstehen kann.\\
+	\subsection{Problemstellung}
+A	Außerdem ist es eine große Verantwortung, da schnell ein großer Schaden entstehen kann.\\
 	Viele Manöver könnten automatisiert werden und man könnte Unfälle verhindern, wenn man die Positionen der Nadelspitzen zuverlässig und automatisch aus den Bildern extrahieren könnte.\\
 	\\
-	Wenn dies gelingt, wäre ein weiterer Schritt den Touchdown zuverlässig zu erkennen und/oder zu detektieren, ob sich Spitzen gefährlich nahe kommen.
+	Wenn dies gelingt, wäre ein weiterer Schritt, den Touchdown zuverlässig zu erkennen und zu detektieren, ob sich Spitzen im Kollisionskurs mit anderen Objekten befinden.
 	\subsection{Idee}
-	Trainieren eines CNN, um die Nadelkonturen und die Spitzenposition auszugeben.\\
+	Trainieren eines Convolutional Neural Networks, um die Nadelkonturen und die Spitzenposition auszugeben.\\
 	Hierzu könnte man ein Autoencoder Netzwerk darauf trainieren, ein Binärbild mit der Segmentierung von Spitzen und Probe zu erstellen.\\
 	Ein weiteres Netzwerk könnte die Konturen zeichnen und die Spitze markieren.\\
 	Die genaue Netzstruktur ist noch offen.\\
