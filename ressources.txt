@@ -1,0 +1,32 @@
+Semantic Segmentation
+	DeepLabv3 - Pytorch
+	https://towardsdatascience.com/computer-vision-instance-segmentation-with-mask-r-cnn-7983502fcad1?gi=e15ca1cffcc8
+
+Instance Segmentation
+	Mask-RCNN - Matterport - COCO Dataset
+	https://towardsdatascience.com/computer-vision-instance-segmentation-with-mask-r-cnn-7983502fcad1
+
+	Mask-RCNN - Matterport - Custom Baloon set
+	https://engineering.matterport.com/splash-of-color-instance-segmentation-with-mask-r-cnn-and-tensorflow-7c761e238b46?gi=069ff73c176d
+
+
+	Theory - M-RCNN - Keypoint detection
+	https://medium.com/analytics-vidhya/review-mask-r-cnn-instance-segmentation-human-pose-estimation-61080a93bf4
+	
+	Mask-RCNN - segmentation + keypoint
+	https://github.com/chrispolo/Keypoints-of-humanpose-with-Mask-R-CNN
+
+	Keypoint-RCNN - pytorch - custom
+	https://medium.com/@alexppppp/how-to-train-a-custom-keypoint-detection-model-with-pytorch-d9af90e111da
+
+	YOLOv7 - keypoint detection
+	https://stackabuse.com/pose-estimation-and-keypoint-detection-with-yolov7-in-python/
+	
+	YOLOv8 - tracking + segmentation
+	https://github.com/mikel-brostrom/yolov8_tracking
+
+Data augmentation
+	Albumentation
+	https://towardsdatascience.com/how-to-use-data-augmentation-to-10x-your-image-datasets-dab42858be55
+	GAN
+	https://theaisummer.com/gan-computer-vision/
