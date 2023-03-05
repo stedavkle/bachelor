@@ -7,7 +7,7 @@ https://github.com/chrise96/image-to-coco-json-converter
 The code is modified to fit the needs of this project.
 """
 
-
+#%%
 import glob
 from PIL import Image                                      # (pip install Pillow)
 import numpy as np                                         # (pip install numpy)
@@ -19,31 +19,31 @@ import json
 # Label ids of the dataset
 category_ids = {
     "background": 0,
-    "tip1": 1,
-    "tip2": 2,
-    "tip3": 3,
-    "tip4": 4,
-    "tip5": 5,
-    "tip6": 6,
-    "tip7": 7,
-    "tip8": 8
+    "tip": 1,
+    # "tip2": 2,
+    # "tip3": 3,
+    # "tip4": 4,
+    # "tip5": 5,
+    # "tip6": 6,
+    # "tip7": 7,
+    # "tip8": 8
 }
 
 # Define which colors match which categories in the images
 category_colors = {
     "(0, 0, 0)": 0, # background,
     "(255, 0, 0)": 1, # tip1
-    "(255, 255, 0)": 2, # tip2
-    "(128, 0, 255)": 3, # tip3
-    "(255, 128, 0)": 4, # tip4
-    "(0, 0, 255)": 5, # tip5
-    "(128, 255, 255)": 6, # tip6
-    "(0, 255, 0)": 7, # tip7
-    "(128, 128, 128)": 8 # tip8
+    "(255, 255, 0)": 1, # tip2
+    "(128, 0, 255)": 1, # tip3
+    "(255, 128, 0)": 1, # tip4
+    "(0, 0, 255)": 1, # tip5
+    "(128, 255, 255)": 1, # tip6
+    "(0, 255, 0)": 1, # tip7
+    "(128, 128, 128)": 1 # tip8
 }
 
 # Define the ids that are a multiplolygon. In our case: wall, roof and sky
-multipolygon_ids = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+multipolygon_ids = [0, 1]#, 2, 3, 4, 5, 6, 7, 8]
 
 
 def create_sub_masks(mask_image, width, height):
@@ -166,7 +166,7 @@ def images_annotations_info(maskpath):
     
     for mask_image in glob.glob(maskpath + "*.tif"):
         # We make a reference to the original file in the COCO JSON file
-        original_file_name = os.path.basename(mask_image).split(".")[0].split("_")[0] + ".tif"
+        original_file_name = os.path.basename(mask_image)
 
         # Open the image and (to be sure) we convert it to RGB
         mask_image_open = Image.open(mask_image).convert("RGB")
@@ -178,7 +178,14 @@ def images_annotations_info(maskpath):
 
         sub_masks = create_sub_masks(mask_image_open, w, h)
         for color, sub_mask in sub_masks.items():
-            category_id = category_colors[color]
+            try:
+                category_id = category_colors[color]
+            except Exception as e:
+                print(original_file_name, e, mask_image_open.mode)
+                # print the distribution of colors in the image
+                #print(mask_image_open.getcolors())
+                break
+
 
             # "annotations" info
             polygons, segmentations = create_sub_mask_annotation(sub_mask)
@@ -203,12 +210,12 @@ def images_annotations_info(maskpath):
                     annotation_id += 1
         image_id += 1
     return images, annotations, annotation_id
-
+#%%
 if __name__ == "__main__":
     # Get the standard COCO JSON format
     coco_format = get_coco_json_format()
     root = r"D:\datasets"
-    dataset = r"\test"
+    dataset = r"\test3"
     
     IGNORE_BACKGROUND = True
     background_color = "(0, 0, 0)"
@@ -230,3 +237,59 @@ if __name__ == "__main__":
             json.dump(coco_format, outfile)
         
         print("Created %d annotations for images in folder: %s" % (annotation_cnt, mask_path))
+
+
+#%%
+def check_img(img_path):
+    img = Image.open(img_path)
+    print(img.getcolors())
+
+def correct_mask(mask_folder):
+    for root, dirs, files in os.walk(mask_folder):
+        for file in files:
+            if file.endswith(".tif"):
+                print(os.path.join(root, file))
+                img = Image.open(os.path.join(root, file))
+                pixels = img.load()
+                for x in range(img.width):
+                    for y in range(img.height):
+                        r, g, b = pixels[x, y]
+
+                        # Modify the red channel
+                        if r < 120:
+                            r = 0
+                        elif r >= 120 and r <= 135:
+                            r = 128
+                        else:
+                            r = 255
+
+                        # Modify the green channel
+                        if g < 120:
+                            g = 0
+                        elif g >= 120 and g <= 135:
+                            g = 128
+                        else:
+                            g = 255
+
+                        # Modify the blue channel
+                        if b < 120:
+                            b = 0
+                        elif b >= 120 and b <= 135:
+                            b = 128
+                        else:
+                            b = 255
+
+                        # Update the pixel with the modified color channels
+                        pixels[x, y] = (r, g, b)
+                img.save(os.path.join(root, file))
+#%%
+def correct_color(img_path):
+    img = Image.open(img_path)
+    pixels = img.load()
+    for x in range(img.width):
+        for y in range(img.height):
+            if pixels[x, y] == (0, 0, 128):
+                pixels[x, y] = (0, 0, 255)
+    img.save(img_path)
+
+# %%

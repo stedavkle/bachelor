@@ -25,6 +25,11 @@ Instance Segmentation
 	YOLOv8 - tracking + segmentation
 	https://github.com/mikel-brostrom/yolov8_tracking
 
+	YOLOv7 official segmentation
+	https://blog.roboflow.com/train-yolov7-instance-segmentation-on-custom-data/
+	https://github.com/WongKinYiu/yolov7/tree/mask
+	https://medium.com/augmented-startups/train-yolov7-segmentation-on-custom-data-b91237bd2a29
+
 Data augmentation
 	Albumentation
 	https://towardsdatascience.com/how-to-use-data-augmentation-to-10x-your-image-datasets-dab42858be55
