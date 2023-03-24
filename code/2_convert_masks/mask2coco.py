@@ -15,12 +15,18 @@ from skimage import measure                                # (pip install scikit
 from shapely.geometry import Polygon, MultiPolygon         # (pip install Shapely)
 import os
 import json
-import shutil
 
 # Label ids of the dataset
 category_ids = {
     "background": 0,
-    "tip": 1
+    "tip": 1,
+    # "tip2": 2,
+    # "tip3": 3,
+    # "tip4": 4,
+    # "tip5": 5,
+    # "tip6": 6,
+    # "tip7": 7,
+    # "tip8": 8
 }
 
 # Define which colors match which categories in the images
@@ -35,6 +41,10 @@ category_colors = {
     "(0, 255, 0)": 1, # tip7
     "(128, 128, 128)": 1 # tip8
 }
+
+# Define the ids that are a multiplolygon. In our case: wall, roof and sky
+multipolygon_ids = [0, 1]#, 2, 3, 4, 5, 6, 7, 8]
+
 
 def create_sub_masks(mask_image, width, height):
     # Initialize a dictionary of sub-masks indexed by RGB colors
@@ -67,6 +77,8 @@ def create_sub_mask_annotation(sub_mask):
     # Note: there could be multiple contours if the object
     # is partially occluded. (E.g. an elephant behind a tree)
     contours = measure.find_contours(np.array(sub_mask), 0.5, positive_orientation="low")
+
+    polygons = []
     segmentations = []
     for contour in contours:
         # Flip from (row, col) representation to (x, y)
@@ -82,23 +94,87 @@ def create_sub_mask_annotation(sub_mask):
         if(poly.is_empty):
             # Go to next iteration, dont save empty values in list
             continue
-        segmentation = normalize_segmentaion(np.array(poly.exterior.coords).ravel(), sub_mask.size).tolist()
+
+        polygons.append(poly)
+
+        segmentation = np.array(poly.exterior.coords).ravel().tolist()
         segmentations.append(segmentation)
     
-    return segmentations
+    return polygons, segmentations
+
+def create_category_annotation(category_dict):
+    category_list = []
+
+    for key, value in category_dict.items():
+        category = {
+            "supercategory": key,
+            "id": value,
+            "name": key
+        }
+        category_list.append(category)
+
+    return category_list
+
+def create_image_annotation(file_name, width, height, image_id):
+    images = {
+        "file_name": file_name,
+        "height": height,
+        "width": width,
+        "id": image_id
+    }
+
+    return images
+
+def create_annotation_format(polygon, segmentation, image_id, category_id, annotation_id):
+    min_x, min_y, max_x, max_y = polygon.bounds
+    width = max_x - min_x
+    height = max_y - min_y
+    bbox = (min_x, min_y, width, height)
+    area = polygon.area
+
+    annotation = {
+        "segmentation": segmentation,
+        "area": area,
+        "iscrowd": 0,
+        "image_id": image_id,
+        "bbox": bbox,
+        "category_id": category_id,
+        "id": annotation_id
+    }
+
+    return annotation
+
+def get_coco_json_format():
+    # Standard COCO format 
+    coco_format = {
+        "info": {},
+        "licenses": [],
+        "images": [{}],
+        "categories": [{}],
+        "annotations": [{}]
+    }
+
+    return coco_format
 
 # Get "images" and "annotations" info 
-def annotate_masks(maskpath, destpath):
+def images_annotations_info(maskpath):
     # This id will be automatically increased as we go
     annotation_id = 0
     image_id = 0
-    print("maskpath", maskpath)
-    for mask_image in glob.glob(maskpath + "\*.tif"):
+    annotations = []
+    images = []
+    
+    for mask_image in glob.glob(maskpath + "*.tif"):
+        # We make a reference to the original file in the COCO JSON file
         original_file_name = os.path.basename(mask_image)
-        print(original_file_name)
+
         # Open the image and (to be sure) we convert it to RGB
         mask_image_open = Image.open(mask_image).convert("RGB")
         w, h = mask_image_open.size
+        
+        # "images" info 
+        image = create_image_annotation(original_file_name, w, h, image_id)
+        images.append(image)
 
         sub_masks = create_sub_masks(mask_image_open, w, h)
         for color, sub_mask in sub_masks.items():
@@ -110,53 +186,58 @@ def annotate_masks(maskpath, destpath):
                 #print(mask_image_open.getcolors())
                 break
 
-            segmentations = create_sub_mask_annotation(sub_mask)
-            
-            
 
-            annotation_id += 1
+            # "annotations" info
+            polygons, segmentations = create_sub_mask_annotation(sub_mask)
+
+            # Check if we have classes that are a multipolygon
+            if category_id in multipolygon_ids:
+                # Combine the polygons to calculate the bounding box and area
+                multi_poly = MultiPolygon(polygons)
+                                
+                annotation = create_annotation_format(multi_poly, segmentations, image_id, category_id, annotation_id)
+
+                annotations.append(annotation)
+                annotation_id += 1
+            else:
+                for i in range(len(polygons)):
+                    # Cleaner to recalculate this variable
+                    segmentation = [np.array(polygons[i].exterior.coords).ravel().tolist()]
+                    
+                    annotation = create_annotation_format(polygons[i], segmentation, image_id, category_id, annotation_id)
+                    
+                    annotations.append(annotation)
+                    annotation_id += 1
         image_id += 1
-    return image_id, annotation_id
-
-def normalize_segmentaion(seg, size):
-    width, height = size
-    arr1 = seg[::2]
-    arr2 = seg[1::2]
-
-    arr1 = arr1 / width
-    arr2 = arr2 / height
-
-    result = np.empty(seg.size, dtype=arr1.dtype)
-    result[::2] = arr1
-    result[1::2] = arr2
-    return result
+    return images, annotations, annotation_id
 #%%
 if __name__ == "__main__":
-    src = r"D:\datasets\1img"
-    src_images = os.path.join(src, "images")
-    src_masks = os.path.join(src, "masks")
-    dest = r"D:\datasets\1img-yolo"
-    if not os.path.exists(dest): os.mkdir(dest)
-    dest_images = os.path.join(dest, "images")
-    dest_labels = os.path.join(dest, "labels")
+    # Get the standard COCO JSON format
+    coco_format = get_coco_json_format()
+    root = r"D:\datasets"
+    dataset = r"\1img-coco"
     
     IGNORE_BACKGROUND = True
     background_color = "(0, 0, 0)"
     if IGNORE_BACKGROUND:
         category_ids.pop("background")
         category_colors.pop(background_color)
+        multipolygon_ids.remove(0)
 
-    # copy images
-    if not os.path.exists(dest_images): os.mkdir(dest_images)
-    for root, dirs, files in os.walk(src_images):
-        for file in files:
-            shutil.copy(os.path.join(root, file), dest_images)
-
-    # convert masks to yolo format
-    if not os.path.exists(dest_labels): os.mkdir(dest_labels)
-    image_cnt, annotation_cnt = annotate_masks(src_masks, dest_labels)
+    for keyword in ["train", "val"]:
+        mask_path = root + dataset + "/{}_masks/".format(keyword)
+        
+        # Create category section
+        coco_format["categories"] = create_category_annotation(category_ids)
     
-    print("Created %d annotations for %d images in folder: %s" % (annotation_cnt, image_cnt, dest_labels))
+        # Create images and annotations sections
+        coco_format["images"], coco_format["annotations"], annotation_cnt = images_annotations_info(mask_path)
+
+        with open(root + dataset + "/annotation/{}.json".format(keyword),"w") as outfile:
+            json.dump(coco_format, outfile)
+        
+        print("Created %d annotations for images in folder: %s" % (annotation_cnt, mask_path))
+
 
 #%%
 def check_img(img_path):
