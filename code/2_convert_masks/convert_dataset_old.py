@@ -159,34 +159,14 @@ def create_sub_mask_annotation(sub_mask):
         segmentations.append(segmentation)
     
     return polygons, segmentations
-def create_segment_format(polygon, category_id, segment_id):
-    min_x, min_y, max_x, max_y = polygon.bounds
-    width = max_x - min_x
-    height = max_y - min_y
-    bbox = (min_x, min_y, width, height)
-    area = polygon.area\
-
-    segment = {
-        "id": segment_id,
-        "category_id": category_id,
-        "iscrowd": 0,
-        "bbox": bbox,
-        "area": area
-    }
-    return segment
 def images_annotations_info(dataset_path, subset):
     # This id will be automatically increased as we go
     annotation_id = 0
     image_id = 0
     annotations = []
-
-    annotations_panoptic = []
-    
     images = []
     
     for image in tqdm(subset, desc="Creating annotations"):
-        segments = []
-
         # We make a reference to the original file in the COCO JSON file
         original_file_name = os.path.join(image)
         mask_image = os.path.join(dataset_path, 'masks', image)
@@ -221,7 +201,7 @@ def images_annotations_info(dataset_path, subset):
                 multi_poly = MultiPolygon(polygons)
                                 
                 annotation = create_annotation_format(multi_poly, segmentations, image_id, category_id, annotation_id)
-                segments.append(create_segment_format(multi_poly, category_id, annotation_id))
+
                 annotations.append(annotation)
                 annotation_id += 1
             else:
@@ -230,79 +210,35 @@ def images_annotations_info(dataset_path, subset):
                     segmentation = [np.array(polygons[i].exterior.coords).ravel().tolist()]
                     
                     annotation = create_annotation_format(polygons[i], segmentation, image_id, category_id, annotation_id)
-                    segments.append(create_segment_format(polygons[i], category_id, annotation_id))
+                    
                     annotations.append(annotation)
                     annotation_id += 1
-        annotations_panoptic.append({
-            "image_id": image_id,
-            "file_name": original_file_name,
-            "segments_info": segments
-        })
         image_id += 1
-    return images, annotations, annotations_panoptic, annotation_id
-
-
-def create_category_annotation_panoptic(category_dict):
-    category_list = []
-
-    for key, value in category_dict.items():
-        category = {
-            "supercategory": key,
-            "id": value,
-            "isthing": int(value > 0),
-            "name": key,
-            "color": list(map(int, category_colors_inv[category_ids[key]][1:-1].split(", ")))
-        }
-        category_list.append(category)
-
-    return category_list
+    return images, annotations, annotation_id
 def create_coco_dataset(dataset_path, train, val):
     train_coco_format = get_coco_json_format()
     val_coco_format = get_coco_json_format()
 
-    train_coco_format_panoptic = get_coco_json_format()
-    val_coco_format_panoptic = get_coco_json_format()
-
     train_coco_format["categories"] = create_category_annotation(category_ids)
     val_coco_format["categories"] = create_category_annotation(category_ids)
 
-    train_coco_format_panoptic["categories"] = create_category_annotation_panoptic(category_ids)
-    val_coco_format_panoptic["categories"] = create_category_annotation_panoptic(category_ids)
-
-    train_images, train_annotations, train_annotations_panoptic, train_annotation_id = images_annotations_info(dataset_path, train)
-    val_images, val_annotations, val_annotations_panoptic, val_annotation_id = images_annotations_info(dataset_path, val)
-
-    train_coco_format["images"], train_coco_format["annotations"], train_annotation_cnt = train_images, train_annotations, train_annotation_id
-    val_coco_format["images"], val_coco_format["annotations"], val_annotation_cnt = val_images, val_annotations, val_annotation_id
-
-    train_coco_format_panoptic["images"], train_coco_format_panoptic["annotations"], train_annotation_cnt = train_images, train_annotations_panoptic, train_annotation_id
-    val_coco_format_panoptic["images"], val_coco_format_panoptic["annotations"], val_annotation_cnt = val_images, val_annotations_panoptic, val_annotation_id
+    train_coco_format["images"], train_coco_format["annotations"], train_annotation_cnt = images_annotations_info(dataset_path, train)
+    val_coco_format["images"], val_coco_format["annotations"], val_annotation_cnt = images_annotations_info(dataset_path, val)
 
     dest = dataset_path + '_coco'
     make_coco_dirs(dest)
 
-    dest_panoptic = dataset_path + '_coco_panoptic'
-    make_coco_dirs(dest_panoptic)
-    
     with open(os.path.join(dest,  'annotations', 'train.json'), "w") as outfile:
             json.dump(train_coco_format, outfile)
     with open(os.path.join(dest,  'annotations', 'val.json'), "w") as outfile:
             json.dump(val_coco_format, outfile)
 
-    with open(os.path.join(dest_panoptic,  'annotations', 'train.json'), "w") as outfile:
-            json.dump(train_coco_format_panoptic, outfile)
-    with open(os.path.join(dest_panoptic,  'annotations', 'val.json'), "w") as outfile:
-            json.dump(val_coco_format_panoptic, outfile)
-
     # copy images folder to coco folder
     shutil.copytree(os.path.join(dataset_path, 'images'), os.path.join(dest, 'images'), dirs_exist_ok=True)
-    shutil.copytree(os.path.join(dataset_path, 'images'), os.path.join(dest_panoptic, 'images'), dirs_exist_ok=True)
-
-    shutil.copytree(os.path.join(dataset_path, 'masks'), os.path.join(dest_panoptic, 'annotations', 'masks'), dirs_exist_ok=True)
 
     print("Created %d annotations for train images:" % (train_annotation_cnt))
     print("Created %d annotations for val images:" % (val_annotation_cnt))
-    return dest, dest_panoptic
+    return dest
 
 # YOLO stuff
 def make_yolo_dirs(dir='new_dir/'):
@@ -440,7 +376,6 @@ def create_yolo_dataset(dataset_path, train, val, use_segments=True):
                 for i in range(len(bboxes)):
                     line = *(segments[i] if use_segments else bboxes[i]),  # cls, box or segments
                     file.write(('%g ' * len(line)).rstrip() % line + '\n')
-    return dest
 # Label ids of the dataset
 category_ids = {
     "background": 0,
@@ -466,8 +401,6 @@ category_colors = {
     "(0, 255, 0)": 7, # tip7
     "(128, 128, 128)": 8 # tip8
 }
-category_colors_inv = {v: k for k, v in category_colors.items()}
-
 
 # Define the ids that are a multiplolygon. In our case: wall, roof and sky
 multipolygon_ids = [0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -502,11 +435,10 @@ if __name__ == '__main__':
 #%%
     if args.coco:
         print("Creating coco dataset...")
-        coco_dir, coco_panoptic_dir = create_coco_dataset(dataset_path, train, val)
+        coco_dir = create_coco_dataset(dataset_path, train, val)
         print("Coco dataset created at: ", coco_dir)
-        print("Coco panoptic dataset created at: ", coco_panoptic_dir)
 # %%
     if args.yolo:
         print("Creating yolo dataset...")
-        yolo_dir = create_yolo_dataset(dataset_path, train, val)
+        create_yolo_dataset(dataset_path, train, val)
         print("Yolo dataset created at: ", dataset_path)

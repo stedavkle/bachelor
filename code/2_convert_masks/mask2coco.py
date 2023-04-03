@@ -20,30 +20,30 @@ import json
 category_ids = {
     "background": 0,
     "tip": 1,
-    # "tip2": 2,
-    # "tip3": 3,
-    # "tip4": 4,
-    # "tip5": 5,
-    # "tip6": 6,
-    # "tip7": 7,
-    # "tip8": 8
+    "tip2": 2,
+    "tip3": 3,
+    "tip4": 4,
+    "tip5": 5,
+    "tip6": 6,
+    "tip7": 7,
+    "tip8": 8
 }
 
 # Define which colors match which categories in the images
 category_colors = {
     "(0, 0, 0)": 0, # background,
     "(255, 0, 0)": 1, # tip1
-    "(255, 255, 0)": 1, # tip2
-    "(128, 0, 255)": 1, # tip3
-    "(255, 128, 0)": 1, # tip4
-    "(0, 0, 255)": 1, # tip5
-    "(128, 255, 255)": 1, # tip6
-    "(0, 255, 0)": 1, # tip7
-    "(128, 128, 128)": 1 # tip8
+    "(255, 255, 0)": 2, # tip2
+    "(128, 0, 255)": 3, # tip3
+    "(255, 128, 0)": 4, # tip4
+    "(0, 0, 255)": 5, # tip5
+    "(128, 255, 255)": 6, # tip6
+    "(0, 255, 0)": 7, # tip7
+    "(128, 128, 128)": 8 # tip8
 }
 
 # Define the ids that are a multiplolygon. In our case: wall, roof and sky
-multipolygon_ids = [0, 1]#, 2, 3, 4, 5, 6, 7, 8]
+multipolygon_ids = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 
 def create_sub_masks(mask_image, width, height):
@@ -215,9 +215,9 @@ if __name__ == "__main__":
     # Get the standard COCO JSON format
     coco_format = get_coco_json_format()
     root = r"D:\datasets"
-    dataset = r"\1img-coco"
+    dataset = r"\7img_coco"
     
-    IGNORE_BACKGROUND = True
+    IGNORE_BACKGROUND = False
     background_color = "(0, 0, 0)"
     if IGNORE_BACKGROUND:
         category_ids.pop("background")
@@ -233,6 +233,7 @@ if __name__ == "__main__":
         # Create images and annotations sections
         coco_format["images"], coco_format["annotations"], annotation_cnt = images_annotations_info(mask_path)
 
+        os.makedirs(root + dataset + "/annotation/", exist_ok=True)
         with open(root + dataset + "/annotation/{}.json".format(keyword),"w") as outfile:
             json.dump(coco_format, outfile)
         
