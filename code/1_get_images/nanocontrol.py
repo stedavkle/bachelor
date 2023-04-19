@@ -1,12 +1,17 @@
+#%%
 import time
 import os
 import serial
+import serial.tools.list_ports
+
 import warnings
 
 class nanocontrol():
     def __init__(self, port):
         self.port = port
-        self.ser = serial.Serial(self.port, 115200, timeout=0)
+        self.ser = serial.Serial(self.port, 115200, timeout=10)
+    def close():
+        self.ser.close()
     
     # The NanoControl sends a carriage return terminated line after execution of a command:
     # <status char><tab><message string><CR>
@@ -21,7 +26,7 @@ class nanocontrol():
                     raise Exception(message)
                 elif status == 'i':
                     warnings.warn(message)
-                return (status, message)
+                return message
             return func_wrapper 
     @__return_handling
     def __send(self, cmd):
@@ -29,8 +34,9 @@ class nanocontrol():
         self.ser.flushInput()
         self.ser.write((cmd + '\r').encode('utf-8'))
         self.ser.flush()
-        time.wait(0.1)
+        time.sleep(1)
         buffer = self.ser.read_until(b'\r').decode('ascii')
+        #print(buffer)
         return buffer
 
 
@@ -43,6 +49,9 @@ class nanocontrol():
             return self.__send('stopnack')
     def getVersion(self):
         return self.__send('version')
+    def getInfo(self):
+        ret = self.__send('knbus ?').split(' ')
+        return {'id' : ret[0], 'rank' : ret[1], 'slottype' : ret[2]}
 
     # Returns values of coarse step counters for channels A to D in <message string> separated by blank if axis not specified or returns value of coarse step counter in <message string>
     def getCoarseCounters(self, axis = None):
@@ -54,6 +63,7 @@ class nanocontrol():
             ret = self.__send('coarse %s ?' % axis)
             return {axis : int(ret[1])}
     # Executes <-65536.. 65535> coarse steps in channel <A.. D> at specified speed <1..6> if speed not specified, executes at current speed.
+    # TODO: sending speed does not work
     def moveCoarse(self, axis, steps, speed = None):
         assert axis in 'ABCD', 'Axis must be A, B, C or D'
         assert steps in range(-65536, 65535), 'Steps must be between -65536 and 65535'
@@ -70,38 +80,54 @@ class nanocontrol():
         else:
             return self.__send('coarsereset')
     # Returns fine positions for all channels or fine position for specified channel
-    def getFinePos(self, axis = None):
+    def getFinePos12Bit(self, axis = None):
         if axis is None:
             ret = self.__send('fine ?').split(' ')
             return {'A' : ret[0], 'B' : ret[1], 'C' : ret[2], 'D' : ret[3]}
         else:
             assert axis in 'ABCD', 'Axis must be A, B, C or D'
             ret = self.__send('fine %s ?' % axis)
-            return {axis : int(ret[1])}
+            return {axis : int(ret)}
+    def getFinePos16Bit(self, axis = None):
+        if axis is None:
+            ret = self.__send('fine16 ?').split(' ')
+            return {'A' : ret[0], 'B' : ret[1], 'C' : ret[2], 'D' : ret[3]}
+        else:
+            assert axis in 'ABCD', 'Axis must be A, B, C or D'
+            ret = self.__send('fine16 %s ?' % axis)
+            return {axis : int(ret)}
+    def getFinePosVoltage(self, axis = None):
+        if axis is None:
+            ret = self.__send('fineu ?').split(' ')
+            return {'A' : ret[0], 'B' : ret[1], 'C' : ret[2], 'D' : ret[3]}
+        else:
+            assert axis in 'ABCD', 'Axis must be A, B, C or D'
+            ret = self.__send('fineu %s ?' % axis)
+            return {axis : int(ret)}
     # Sets fine position to <-2048.. 2047> in channel <A.. D>
     def setFinePos12Bit(self, axis, position):
         assert axis in 'ABCD', 'Axis must be A, B, C or D'
-        assert position in range(-2048, 2047), 'Position must be in [-2048, 2047]'
+        assert position in range(-2048, 2047+1), 'Position must be in [-2048, 2047]'
         return self.__send('fine %s %s' % (axis, position))
     # Sets fine position to <-32768.. 32767> in channel <A.. D>
     def setFinePos16Bit(self, axis, position):
         assert axis in 'ABCD', 'Axis must be A, B, C or D'
-        assert position in range(-32768, 32767), 'Position must be in [-32768, 32767]'
+        assert position in range(-32768, 32767+1), 'Position must be in [-32768, 32767]'
         return self.__send('fine16 %s %s' % (axis, position))
     # Sets fine position to <-80000.. 80000> in channel <A.. D>
-    def setFinePos80k(self, axis, position):
+    def setFinePosVoltage(self, axis, position):
         assert axis in 'ABCD', 'Axis must be A, B, C or D'
-        assert position in range(-80000, 80000), 'Position must be in [-80000, 80000]'
+        assert position in range(-80000, 80000+1), 'Position must be in [-80000, 80000]'
         return self.__send('fineu %s %s' % (axis, position))
     # Performs a relative movement of the fine position by the set number of digits <-2048.. 2047> in channel <A.. D>
     def moveFine12Bit(self, axis, steps):
         assert axis in 'ABCD', 'Axis must be A, B, C or D'
-        assert steps in range(-2048, 2047), 'Steps must be in [-2048, 2047]'
+        assert steps in range(-2048, 2047+1), 'Steps must be in [-2048, 2047]'
         return self.__send('finestep %s %s' % (axis, steps))
     # Performs a relative movement of the fine position by the set number of digits <-32768.. 32767> in channel <A.. D>
     def moveFine16Bit(self, axis, steps):
         assert axis in 'ABCD', 'Axis must be A, B, C or D'
-        assert steps in range(-32768, 32767), 'Steps must be in [-32768, 32767]'
+        assert steps in range(-32768, 32767+1), 'Steps must be in [-32768, 32767]'
         return self.__send('finestep16 %s %s' % (axis, steps))
     # Changes to speed <1.. 6>
     def setSpeed(self, s):
@@ -109,8 +135,8 @@ class nanocontrol():
         return self.__send('speed %s' % s)
     # Returns current speed in <message string>
     def getSpeed(self):
-        ret = self.__send('speed ?')
-        return int(ret[1])
+        ret = self.__send('speed ?').split(' ')
+        return {'speed' : int(ret[0]), 'A' : ret[1], 'B' : ret[2], 'C' : ret[3], 'D' : ret[4]}
     
     # Sets the number of fine or coarse steps to be executed for speed <1.. 6> in channels A to D.
     # TODO: is a dict the best way to do this? maybe a list of tuples?
@@ -150,7 +176,24 @@ class nanocontrol():
         assert ms in range(1, 1000), 'Time must be in [1, 999]'
         return self.__send('channel %s %s %s %s %s' % (a, b, c, d, ms))
 
+class controller():
+    ncs = {}
+    def __init__(self):
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            if "N6" in port.serial_number:
+                nc = nanocontrol(port.device)
+                self.ncs[nc.getInfo()['id']] = nc
+    def closeAll(self):
+        for nc in self.ncs.values():
+            nc.close()
+
+    def retractZigZag(self, tipID, c_goal):
+        nc = nanocontrol()#self.ncs[tipID]
+        c_init = 0
+        while c_init < c_goal:
+            nc.
 
 
-
-# coarse a/b/c -1 # b is up/down
+    
+# %%

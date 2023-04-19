@@ -418,8 +418,10 @@ def create_yolo_dataset(dataset_path, train, val, use_segments=True):
                 box[[1, 3]] /= h  # normalize y
                 if box[2] <= 0 or box[3] <= 0:  # if w <= 0 and h <= 0
                     continue
-
-                cls = ann['category_id'] - 1  # class
+                if IGNORE_BACKGROUND:
+                    cls = ann['category_id'] - 1
+                else:
+                    cls = ann['category_id']  # class
                 box = [cls] + box.tolist()
                 if box not in bboxes:
                     bboxes.append(box)
@@ -474,31 +476,42 @@ multipolygon_ids = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 #%%
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, help='dataset path (ie: /home/user/dataset)')
-    parser.add_argument('--split', required=True, type=float, help='split ratio (ie: 0.8)')
-    parser.add_argument('--coco', action='store_true', help='convert to coco dataset')
-    parser.add_argument('--yolo', action='store_true', help='convert to yolo dataset')
+    #parser.add_argument('-h', type)
+    parser.add_argument('-dataset', required=True, type=str, help='dataset path (ie: /home/user/dataset)')
+    parser.add_argument('-split', required=True, type=float, help='split ratio (ie: 0.8)')
+    parser.add_argument('-coco', action='store_true', help='convert to coco dataset')
+    parser.add_argument('-yolo', action='store_true', help='convert to yolo dataset')
+    parser.add_argument('-oc', action='store_true', help='use one class, all tips are the same class')
+    parser.add_argument('-ib', action='store_true', help='include background')
 
     args = parser.parse_args()
     print(args)
 
-    dataset_path = args.dataset
+    if args.oc:
+        category_ids = {"background": 0, "tip": 1}
+        category_colors = {"(0, 0, 0)": 0, "(255, 0, 0)": 1, "(255, 255, 0)": 1, "(128, 0, 255)": 1, "(255, 128, 0)": 1, "(0, 0, 255)": 1, "(128, 255, 255)": 1, "(0, 255, 0)": 1, "(128, 128, 128)": 1}
+        category_colors_inv = {v: k for k, v in category_colors.items()}
 
-    IGNORE_BACKGROUND = False
+
+    if args.dataset:
+        dataset_path = args.dataset
+
+    IGNORE_BACKGROUND = not args.ib
     background_color = "(0, 0, 0)"
     if IGNORE_BACKGROUND:
         category_ids.pop("background")
         category_colors.pop(background_color)
         multipolygon_ids.remove(0)
 #%%
-    print("Splitting dataset...")
-    train, val = split(dataset_path, args.split)
-    print("Train: ", len(train))
-    print("Val: ", len(val))
+    if args.split:
+        print("Splitting dataset...")
+        train, val = split(dataset_path, args.split)
+        print("Train: ", len(train))
+        print("Val: ", len(val))
 
-#%%
-    split_dir = create_split_dataset(dataset_path, train, val)
-    print("Split dataset created at: ", split_dir)    
+    #%%
+        split_dir = create_split_dataset(dataset_path, train, val)
+        print("Split dataset created at: ", split_dir)    
 #%%
     if args.coco:
         print("Creating coco dataset...")

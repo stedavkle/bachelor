@@ -2,9 +2,11 @@ import PySimpleGUI as sg
 import augmentor
 import SEM_API_CUSTOM
 import os
+import nanocontrol
 
 sem = None
 aug = None
+con = None
 
 rot_keys = ['r0', 'r45', 'r90', 'r135', 'r180', 'r225', 'r270', 'r315']
 detector_keys = ['InLens', 'SE2', 'EBIC']
@@ -35,17 +37,28 @@ aug_control = [
     [sg.Text('Scanrates:')] + [sg.Checkbox(key[2:], key=key) for key in scanrate_keys],
     [sg.Text('WD Deviation %:'), sg.Combo(wd_deviations, default_value='0.5', key='wd_deviation')],
     [sg.Button('Augment')],
-    [sg.Button('Grab Masks',disabled=True), sg.Button('Grab Images', disabled=True), sg.Button('Cancel')]
+    [sg.Button('Grab Masks', disabled=True), sg.Button('Grab Images', disabled=True), sg.Button('Cancel')]
 ]
 
+nc_control = [
+    [sg.Text('Here you can control the nanocontrol')],
+    [sg.Button('Connect', key='nc_connect'), sg.Button('Disconnect', disabled=True, key='nc_disconnect')],
+    [sg.Checkbox('Tip 1', key='tip1', disabled=True), sg.Checkbox('Tip 2', key='tip2', disabled=True), sg.Checkbox('Tip 3', key='tip3', disabled=True), sg.Checkbox('Tip 4', key='tip4', disabled=True), sg.Checkbox('Tip 5', key='tip5', disabled=True), sg.Checkbox('Tip 6', key='tip6', disabled=True), sg.Checkbox('Tip 7', key='tip7', disabled=True), sg.Checkbox('Tip 8', key='tip8', disabled=True), sg.Checkbox('Substage', key='tip31', disabled=True)],
+    [sg.Text('Retract length:'), sg.InputText(key='retract_length', size=(10, 1)), sg.Combo(['um', 'nm'], default_value='um', key='retract_unit')],
+]
 
 layout = [
-    [sg.TabGroup([[sg.Tab('SEM Control', [[sg.Column(sem_control), sg.VSeparator(), sg.Column(sem_parameter)]]), sg.Tab('Augmentation Control', aug_control, disabled=True)]])],
+    [sg.TabGroup([[ sg.Tab('SEM Control', [[sg.Column(sem_control), sg.VSeparator(), sg.Column(sem_parameter)]]),
+                    sg.Tab('Augmentation Control', aug_control, disabled=True),
+                    sg.Tab('Nanocontrol', nc_control)
+                ]])],
     [sg.Multiline(size=(50, 20), key='log', autoscroll=True)],
     [sg.Button('Exit'), sg.Button('Test')]
 ]
 
 window = sg.Window('My Program', layout)
+
+event, values = window.read(timeout=100)
 
 window['r0'].update(True)
 window['r90'].update(True)
@@ -141,6 +154,26 @@ while True:
         window['Grab Masks'].update(disabled=False)
         window['Grab Images'].update(disabled=False)
         window['log'].print('Grabbing done')
+
+
+    if event == 'nc_connect':
+        window['log'].print('Nanocontrols connected')
+        if con is None:
+            con = nanocontrol.controller()
+            for nc in con.ncs.keys():
+                window['log'].print(nc)
+                window["tip"+str(nc)].update(True)
+        window['nc_connect'].update(disabled=True)
+        window['nc_disconnect'].update(disabled=False)
+    if event == 'nc_disconnect':
+        window['log'].print('Nanocontrols disconnected')
+        for nc in con.ncs.keys():
+            window["tip"+str(nc)].update(False)
+        con = None
+        window['nc_connect'].update(disabled=False)
+        window['nc_disconnect'].update(disabled=True)
+        
+    
     if event == 'Test':
         print(values)
 window.close()
