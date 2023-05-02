@@ -3,6 +3,7 @@ import time
 import os
 import serial
 import serial.tools.list_ports
+import random
 
 import warnings
 
@@ -10,7 +11,7 @@ class nanocontrol():
     def __init__(self, port):
         self.port = port
         self.ser = serial.Serial(self.port, 115200, timeout=10)
-    def close():
+    def close(self):
         self.ser.close()
     
     # The NanoControl sends a carriage return terminated line after execution of a command:
@@ -30,6 +31,7 @@ class nanocontrol():
             return func_wrapper 
     @__return_handling
     def __send(self, cmd):
+        #print(cmd)
         leftover = self.ser.inWaiting()
         self.ser.flushInput()
         self.ser.write((cmd + '\r').encode('utf-8'))
@@ -140,7 +142,7 @@ class nanocontrol():
     
     # Sets the number of fine or coarse steps to be executed for speed <1.. 6> in channels A to D.
     # TODO: is a dict the best way to do this? maybe a list of tuples?
-    def moveAxes(self, movement, speed):
+    def setSpeedConfig(self, movement, speed):
         assert len(movement) == 4, 'Instruction must be dict of length 4'
         assert all([axis in 'ABCD' for axis in movement.keys()]), 'Axis must be A, B, C or D'
         assert all([steps[0] in 'cf' and steps[1] in range(1, 65) for steps in movement.values()]), 'Steps must be coarse/fine and in range [1,64]'
@@ -178,6 +180,14 @@ class nanocontrol():
 
 class controller():
     ncs = {}
+
+    patterns = {
+        0 : [['C-2', 'A-1'], ['C-1', 'A2'], ['C-2', 'A-1']],
+        1 : [['C-2', 'A1'], ['C-1', 'A-1'], ['C-2', 'A-1']],
+        2 : [['C-1'], ['C-2', 'A-1'], ['C-1', 'A+2']],
+        3 : [['C-2', 'A1'], ['A-2'], ['A1', 'C-2']]
+    }
+
     def __init__(self):
         ports = serial.tools.list_ports.comports()
         for port in ports:
@@ -188,12 +198,11 @@ class controller():
         for nc in self.ncs.values():
             nc.close()
 
-    def retractZigZag(self, tipID, c_goal):
-        nc = nanocontrol()#self.ncs[tipID]
-        c_init = 0
-        while c_init < c_goal:
-            nc.
-
-
-    
-# %%
+    def retract(self, distance_nm=300):
+        factor = distance_nm / 300
+        nc_pt = {(nc, random.randint(0, len(self.patterns))) for nc in self.ncs.keys()}
+        print(nc_pt)
+        for step in range(len(self.patterns[0])):
+            for nc, pt in nc_pt:
+                for cmd in self.patterns[pt][step]:
+                    self.ncs[nc].moveCoarse(cmd[0], int(cmd[1:]))
