@@ -3,6 +3,7 @@ import augmentor
 import SEM_API_CUSTOM
 import os
 import nanocontrol
+import time
 
 sem = None
 aug = None
@@ -11,7 +12,7 @@ con = None
 rot_keys = ['r0', 'r45', 'r90', 'r135', 'r180', 'r225', 'r270', 'r315']
 detector_keys = ['InLens', 'SE2', 'EBIC']
 scanrate_keys = ['sr1', 'sr2', 'sr3', 'sr4', 'sr5', 'sr6', 'sr7', 'sr8', 'sr9', 'sr10', 'sr11', 'sr12', 'sr13', 'sr14', 'sr15']
-wd_deviations = ['0.3', '0.4', '0.5', '0.6', '0.7']
+wd_deviations = ['0.003', '0.004', '0.005', '0.006', '0.007']
 
 sg.theme('DarkBrown4')   # Add a touch of color
 
@@ -44,16 +45,24 @@ nc_control = [
     [sg.Text('Here you can control the nanocontrol')],
     [sg.Button('Connect', key='nc_connect'), sg.Button('Disconnect', disabled=True, key='nc_disconnect')],
     [sg.Checkbox('Tip 1', key='tip1', disabled=True), sg.Checkbox('Tip 2', key='tip2', disabled=True), sg.Checkbox('Tip 3', key='tip3', disabled=True), sg.Checkbox('Tip 4', key='tip4', disabled=True), sg.Checkbox('Tip 5', key='tip5', disabled=True), sg.Checkbox('Tip 6', key='tip6', disabled=True), sg.Checkbox('Tip 7', key='tip7', disabled=True), sg.Checkbox('Tip 8', key='tip8', disabled=True), sg.Checkbox('Substage', key='tip31', disabled=True)],
-    [sg.Text('Retract length:'), sg.InputText(key='retract_length', size=(10, 1)), sg.Combo(['um', 'nm'], default_value='um', key='retract_unit')],
+    [sg.Button('Assign patterns', disabled=True, key='nc_pattern')],
+    [sg.Text('Retract length:'), sg.InputText(key='nc_ret_len', size=(10, 1)), sg.Combo(['um', 'nm'], default_value='um', key='nc_ret_unit')],
+    [sg.Button('Retract', disabled=True, key='nc_retract')],
+]
+
+runner = [
+    [sg.Text('Here you can run the whole process')],
+    [sg.Button('Run')]
 ]
 
 layout = [
     [sg.TabGroup([[ sg.Tab('SEM Control', [[sg.Column(sem_control), sg.VSeparator(), sg.Column(sem_parameter)]]),
-                    sg.Tab('Augmentation Control', aug_control, disabled=True),
-                    sg.Tab('Nanocontrol', nc_control)
+                    sg.Tab('Augmentation Control', aug_control, disabled=False),
+                    sg.Tab('Nanocontrol', nc_control),
+                    sg.Tab('Runner', runner)
                 ]])],
     [sg.Multiline(size=(50, 20), key='log', autoscroll=True)],
-    [sg.Button('Exit'), sg.Button('Test')]
+    [sg.Button('Exit'), sg.Button('Test')],
 ]
 
 window = sg.Window('My Program', layout)
@@ -61,10 +70,10 @@ window = sg.Window('My Program', layout)
 event, values = window.read(timeout=100)
 
 window['r0'].update(True)
-window['r90'].update(True)
+window['r135'].update(True)
 window['InLens'].update(True)
 window['SE2'].update(True)
-window['sr3'].update(True)
+window['sr2'].update(True)
 window['sr6'].update(True)
 
 while True:
@@ -134,12 +143,10 @@ while True:
     if event == 'Grab Masks':
         window['log'].print('Grabbing masks')
         window['Grab Images'].update(disabled=True)
-        aug.running = True
         window.start_thread(aug.grabMasks, "grab")
     if event == 'Grab Images':
         window['log'].print('Grabbing images')
         window['Grab Masks'].update(disabled=True)
-        aug.running = True
         window.start_thread(aug.grabImages, "grab")
     if event == 'Cancel':
         aug.running = False
@@ -165,6 +172,7 @@ while True:
                 window["tip"+str(nc)].update(True)
         window['nc_connect'].update(disabled=True)
         window['nc_disconnect'].update(disabled=False)
+        window['nc_pattern'].update(disabled=False)
     if event == 'nc_disconnect':
         window['log'].print('Nanocontrols disconnected')
         for nc in con.ncs.keys():
@@ -172,7 +180,51 @@ while True:
         con = None
         window['nc_connect'].update(disabled=False)
         window['nc_disconnect'].update(disabled=True)
-        
+    if event == 'nc_pattern':
+        nc_pt = con.assignPattern()
+        window['log'].print('Pattern assigned')
+        window['log'].print(nc_pt)
+        window['nc_retract'].update(disabled=False)
+    if event == 'nc_retract':
+        ret = con.retractStep()
+        if ret == 0:
+            window['log'].print('Retraction complete')
+            window['nc_retract'].update(disabled=True)
+        else:
+            window['log'].print('Retracted')
+
+    ## runner
+    if event == 'Run':
+        window['Run'].update(disabled=True)
+        running = True
+        while running:
+            window['log'].print('Grabbing masks')
+            window.start_thread(aug.grabMasks, "nix")
+
+            while aug.running:
+                time.sleep(3)
+                print('waiting')
+
+            window['log'].print('Grabbing images')
+            window.start_thread(aug.grabImages, "nix")
+
+            while aug.running:
+                time.sleep(3)
+                print('waiting')
+
+            aug.iteration += 1
+            window['log'].print('Grabbing done')
+            ret = con.retractStep()
+            if ret == 0:
+                running = False
+                window['Run'].update(disabled=False)
+                window['log'].print('Iteration done, please relocate tips.')
+
+
+
+
+
+
     
     if event == 'Test':
         print(values)

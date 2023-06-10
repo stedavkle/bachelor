@@ -4,15 +4,14 @@
 
 #%%
 import os
+import cv2
 import warnings
 import numpy as np
 import shutil
 from pathlib import Path
 from PIL import Image                                      # (pip install Pillow)
-import numpy as np                                         # (pip install numpy)
 from skimage import measure                                # (pip install scikit-image)
 from shapely.geometry import Polygon, MultiPolygon         # (pip install Shapely)
-import os
 import json
 from collections import defaultdict
 from tqdm import tqdm
@@ -77,10 +76,27 @@ def create_category_annotation(category_dict):
         category = {
             "supercategory": key,
             "id": value,
-            "name": key
+            "name": key,
+            "keypoints" : ["front"],
+            "skeleton" : []
         }
         category_list.append(category)
 
+    return category_list
+def create_category_annotation_panoptic(category_dict):
+    category_list = []
+
+    for key, value in category_dict.items():
+        category = {
+            "supercategory": key,
+            "id": value,
+            "isthing": int(value > 0),
+            "name": key,
+            "color": list(map(int, category_colors_inv[category_ids[key]][1:-1].split(", "))),
+            "keypoints" : ["front"],
+            "skeleton" : []
+        }
+        category_list.append(category)
     return category_list
 def create_image_annotation(file_name, width, height, image_id):
     images = {
@@ -90,7 +106,7 @@ def create_image_annotation(file_name, width, height, image_id):
         "id": image_id
     }
     return images
-def create_annotation_format(polygon, segmentation, image_id, category_id, annotation_id):
+def create_annotation_format(polygon, segmentation, keypoints, image_id, category_id, annotation_id):
     min_x, min_y, max_x, max_y = polygon.bounds
     width = max_x - min_x
     height = max_y - min_y
@@ -106,6 +122,8 @@ def create_annotation_format(polygon, segmentation, image_id, category_id, annot
         "category_id": category_id,
         "id": annotation_id
     }
+    annotation["keypoints"] = [v for point in keypoints for v in point]
+    annotation["num_keypoints"] = len(keypoints)
     return annotation
 def create_sub_masks(mask_image, width, height):
     # Initialize a dictionary of sub-masks indexed by RGB colors
@@ -131,7 +149,19 @@ def create_sub_masks(mask_image, width, height):
             # Set the pixel value to 1 (default is 0), accounting for padding
             sub_masks[pixel_str].putpixel((x+1, y+1), 1)
     return sub_masks
-def create_sub_mask_annotation(sub_mask):
+
+def detect_click(event,x,y,flags,param):
+    if event == cv2.EVENT_LBUTTONUP:
+        param["x"] = x
+        param["y"] = y
+        param["visible"] = 2
+        param["clicked"] = True
+    elif event == cv2.EVENT_RBUTTONUP:
+        param["x"] = x
+        param["y"] = y
+        param["visible"] = 1
+        param["clicked"] = True
+def create_sub_mask_annotation(sub_mask, include_keypoint=False):
     # Find contours (boundary lines) around each sub-mask
     # Note: there could be multiple contours if the object
     # is partially occluded. (E.g. an elephant behind a tree)
@@ -157,14 +187,24 @@ def create_sub_mask_annotation(sub_mask):
 
         segmentation = np.array(poly.exterior.coords).ravel().tolist()
         segmentations.append(segmentation)
-    
-    return polygons, segmentations
+
+        keypoints = []
+        if include_keypoint:
+            cb_params = {"x":0, "y":0, "visible":0, "clicked":False}
+            cv2.imshow('image',np.asarray(sub_mask).astype(np.uint8)*255)
+            cv2.setMouseCallback('image', detect_click, cb_params)
+            while(not cb_params["clicked"]):
+                cv2.waitKey(1)
+                
+            keypoints.append((cb_params["x"], cb_params["y"], cb_params["visible"]))
+
+    return polygons, segmentations, keypoints
 def create_segment_format(polygon, category_id, segment_id):
     min_x, min_y, max_x, max_y = polygon.bounds
     width = max_x - min_x
     height = max_y - min_y
     bbox = (min_x, min_y, width, height)
-    area = polygon.area\
+    area = polygon.area
 
     segment = {
         "id": segment_id,
@@ -174,7 +214,7 @@ def create_segment_format(polygon, category_id, segment_id):
         "area": area
     }
     return segment
-def images_annotations_info(dataset_path, subset):
+def images_annotations_info(dataset_path, subset, include_keypoints):
     # This id will be automatically increased as we go
     annotation_id = 0
     image_id = 0
@@ -211,7 +251,7 @@ def images_annotations_info(dataset_path, subset):
 
 
             # "annotations" info
-            polygons, segmentations = create_sub_mask_annotation(sub_mask)
+            polygons, segmentations, keypoints = create_sub_mask_annotation(sub_mask, include_keypoints)
 
 
 
@@ -220,7 +260,7 @@ def images_annotations_info(dataset_path, subset):
                 # Combine the polygons to calculate the bounding box and area
                 multi_poly = MultiPolygon(polygons)
                                 
-                annotation = create_annotation_format(multi_poly, segmentations, image_id, category_id, annotation_id)
+                annotation = create_annotation_format(multi_poly, segmentations, keypoints, image_id, category_id, annotation_id)
                 segments.append(create_segment_format(multi_poly, category_id, annotation_id))
                 annotations.append(annotation)
                 annotation_id += 1
@@ -229,7 +269,7 @@ def images_annotations_info(dataset_path, subset):
                     # Cleaner to recalculate this variable
                     segmentation = [np.array(polygons[i].exterior.coords).ravel().tolist()]
                     
-                    annotation = create_annotation_format(polygons[i], segmentation, image_id, category_id, annotation_id)
+                    annotation = create_annotation_format(polygons[i], segmentation, keypoints, image_id, category_id, annotation_id)
                     segments.append(create_segment_format(polygons[i], category_id, annotation_id))
                     annotations.append(annotation)
                     annotation_id += 1
@@ -242,21 +282,8 @@ def images_annotations_info(dataset_path, subset):
     return images, annotations, annotations_panoptic, annotation_id
 
 
-def create_category_annotation_panoptic(category_dict):
-    category_list = []
 
-    for key, value in category_dict.items():
-        category = {
-            "supercategory": key,
-            "id": value,
-            "isthing": int(value > 0),
-            "name": key,
-            "color": list(map(int, category_colors_inv[category_ids[key]][1:-1].split(", ")))
-        }
-        category_list.append(category)
-
-    return category_list
-def create_coco_dataset(dataset_path, train, val):
+def create_coco_dataset(dataset_path, train, val, include_keypoints):
     train_coco_format = get_coco_json_format()
     val_coco_format = get_coco_json_format()
 
@@ -269,8 +296,8 @@ def create_coco_dataset(dataset_path, train, val):
     train_coco_format_panoptic["categories"] = create_category_annotation_panoptic(category_ids)
     val_coco_format_panoptic["categories"] = create_category_annotation_panoptic(category_ids)
 
-    train_images, train_annotations, train_annotations_panoptic, train_annotation_id = images_annotations_info(dataset_path, train)
-    val_images, val_annotations, val_annotations_panoptic, val_annotation_id = images_annotations_info(dataset_path, val)
+    train_images, train_annotations, train_annotations_panoptic, train_annotation_id = images_annotations_info(dataset_path, train, include_keypoints)
+    val_images, val_annotations, val_annotations_panoptic, val_annotation_id = images_annotations_info(dataset_path, val, include_keypoints)
 
     train_coco_format["images"], train_coco_format["annotations"], train_annotation_cnt = train_images, train_annotations, train_annotation_id
     val_coco_format["images"], val_coco_format["annotations"], val_annotation_cnt = val_images, val_annotations, val_annotation_id
@@ -446,7 +473,7 @@ def create_yolo_dataset(dataset_path, train, val, use_segments=True):
 # Label ids of the dataset
 category_ids = {
     "background": 0,
-    "tip": 1,
+    "tip1": 1,
     "tip2": 2,
     "tip3": 3,
     "tip4": 4,
@@ -483,12 +510,13 @@ if __name__ == '__main__':
     parser.add_argument('-yolo', action='store_true', help='convert to yolo dataset')
     parser.add_argument('-oc', action='store_true', help='use one class, all tips are the same class')
     parser.add_argument('-ib', action='store_true', help='include background')
+    parser.add_argument('-kp', action='store_true', help='include keypoint coordinates')
 
     args = parser.parse_args()
     print(args)
 
     if args.oc:
-        category_ids = {"background": 0, "tip": 1}
+        category_ids = {"background": 0, "tip1": 1}
         category_colors = {"(0, 0, 0)": 0, "(255, 0, 0)": 1, "(255, 255, 0)": 1, "(128, 0, 255)": 1, "(255, 128, 0)": 1, "(0, 0, 255)": 1, "(128, 255, 255)": 1, "(0, 255, 0)": 1, "(128, 128, 128)": 1}
         category_colors_inv = {v: k for k, v in category_colors.items()}
 
@@ -513,9 +541,13 @@ if __name__ == '__main__':
         split_dir = create_split_dataset(dataset_path, train, val)
         print("Split dataset created at: ", split_dir)    
 #%%
+    if args.kp:
+        cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('image', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
     if args.coco:
         print("Creating coco dataset...")
-        coco_dir, coco_panoptic_dir = create_coco_dataset(dataset_path, train, val)
+        coco_dir, coco_panoptic_dir = create_coco_dataset(dataset_path, train, val, args.kp)
         print("Coco dataset created at: ", coco_dir)
         print("Coco panoptic dataset created at: ", coco_panoptic_dir)
 # %%

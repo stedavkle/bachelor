@@ -180,29 +180,51 @@ class nanocontrol():
 
 class controller():
     ncs = {}
+    stage = {}
+    ncs_pattern = {}
+    step = 0
 
     patterns = {
-        0 : [['C-2', 'A-1'], ['C-1', 'A2'], ['C-2', 'A-1']],
-        1 : [['C-2', 'A1'], ['C-1', 'A-1'], ['C-2', 'A-1']],
-        2 : [['C-1'], ['C-2', 'A-1'], ['C-1', 'A+2']],
-        3 : [['C-2', 'A1'], ['A-2'], ['A1', 'C-2']]
+        0 : [['C2', 'A-1'], ['C1', 'A2'], ['C2', 'A-1']],
+        1 : [['C2', 'A1'], ['C1', 'A-1'], ['C2', 'A-1']],
+        2 : [['C1'], ['C2', 'A-1'], ['C1', 'A+2']],
+        3 : [['C2', 'A1'], ['A-2'], ['A1', 'C2']]
     }
 
     def __init__(self):
         ports = serial.tools.list_ports.comports()
         for port in ports:
-            if "N6" in port.serial_number:
+            if "NC" in port.serial_number:
                 nc = nanocontrol(port.device)
-                self.ncs[nc.getInfo()['id']] = nc
+                id = nc.getInfo()['id']
+                if id == '31':
+                    self.stage['31'] = nc
+                else:
+                    self.ncs[id] = nc
     def closeAll(self):
         for nc in self.ncs.values():
             nc.close()
 
+    def assignPattern(self):
+        self.ncs_pattern = {(nc, random.randint(0, len(self.patterns)-1)) for nc in self.ncs.keys()}
+        self.step = 0
+        return self.ncs_pattern
+    
+    def retractStep(self):
+        if self.step > len(self.patterns[0])-1:
+            return 0
+        else:
+            for nc, pt in self.ncs_pattern:
+                for cmd in self.patterns[pt][self.step]:
+                    self.ncs[nc].moveCoarse(cmd[0], int(cmd[1:]))
+            self.step += 1
+            return 1
+
     def retract(self, distance_nm=300):
         factor = distance_nm / 300
-        nc_pt = {(nc, random.randint(0, len(self.patterns))) for nc in self.ncs.keys()}
-        print(nc_pt)
+        print(self.nc_pt)
         for step in range(len(self.patterns[0])):
-            for nc, pt in nc_pt:
+            for nc, pt in self.nc_pt:
                 for cmd in self.patterns[pt][step]:
                     self.ncs[nc].moveCoarse(cmd[0], int(cmd[1:]))
+#%%
