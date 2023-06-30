@@ -183,18 +183,20 @@ class controller():
     stage = {}
     ncs_pattern = {}
     step = 0
+    stagestep = 0
 
     patterns = {
-        0 : [['C2', 'A-1'], ['C1', 'A2'], ['C2', 'A-1']],
-        1 : [['C2', 'A1'], ['C1', 'A-1'], ['C2', 'A-1']],
-        2 : [['C1'], ['C2', 'A-1'], ['C1', 'A+2']],
-        3 : [['C2', 'A1'], ['A-2'], ['A1', 'C2']]
+        0 : [['C2', 'A-1'], ['C1', 'A2'], ['C2', 'A-1'], []],
+        1 : [['C2', 'A1'], ['C1', 'A-1'], ['C2', 'A-1'], ["A1"]],
+        2 : [['C1'], ['C2', 'A-1'], ['C1', 'A+2'], ['C1', 'A-1']],
+        3 : [['C2', 'A1'], ['A-2'], ['A1', 'C2'], ['C1']]
     }
+    stage_pattern = [['A20', 'B20'], ['B20'], ['A-20', 'B20'], ['A-20'], ['A-20', 'B-20'], ['B-20'], ['A20', 'B-20'], ['A20']]
 
     def __init__(self):
         ports = serial.tools.list_ports.comports()
         for port in ports:
-            if "NC" in port.serial_number:
+            if "N6" in port.serial_number:
                 nc = nanocontrol(port.device)
                 id = nc.getInfo()['id']
                 if id == '31':
@@ -205,18 +207,22 @@ class controller():
         for nc in self.ncs.values():
             nc.close()
 
-    def assignPattern(self):
+    def assignPattern(self, blocked_tips):
+        self.blocked_tips = blocked_tips
+        self.ncs_pattern = {}
         self.ncs_pattern = {(nc, random.randint(0, len(self.patterns)-1)) for nc in self.ncs.keys()}
         self.step = 0
         return self.ncs_pattern
     
-    def retractStep(self):
+    def retractStep(self, factor=1):
         if self.step > len(self.patterns[0])-1:
             return 0
         else:
             for nc, pt in self.ncs_pattern:
-                for cmd in self.patterns[pt][self.step]:
-                    self.ncs[nc].moveCoarse(cmd[0], int(cmd[1:]))
+                if nc not in self.blocked_tips:
+                    for cmd in self.patterns[pt][self.step]:
+                        self.ncs[nc].moveCoarse(cmd[0], int(cmd[1:])*factor)
+                        print("moved: ", nc, cmd[0], int(cmd[1:])*factor)
             self.step += 1
             return 1
 
@@ -227,4 +233,12 @@ class controller():
             for nc, pt in self.nc_pt:
                 for cmd in self.patterns[pt][step]:
                     self.ncs[nc].moveCoarse(cmd[0], int(cmd[1:]))
+    
+    def moveStage(self):
+        cmd = self.stage_pattern[self.stagestep]
+        for movement in cmd:
+            self.stage['31'].moveCoarse(movement[0], int(movement[1:]))
+        self.stagestep += 1
+        if self.stagestep == len(self.stage_pattern):
+            self.stagestep = 0
 #%%

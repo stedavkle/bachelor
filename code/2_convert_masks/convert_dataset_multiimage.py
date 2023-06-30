@@ -44,10 +44,16 @@ def create_split_dataset(src, train, val):
     # Copy images and masks to train and val folders
     for file in train:
         shutil.copy(os.path.join(src, 'images', file), os.path.join(dest, 'train'))
-        shutil.copy(os.path.join(src, 'masks', file), os.path.join(dest, 'train_masks'))
+        try:
+            shutil.copy(os.path.join(src, 'masks', file[:4]+'.tif'), os.path.join(dest, 'train_masks'))
+        except:
+            pass
     for file in val:
         shutil.copy(os.path.join(src, 'images', file), os.path.join(dest, 'val'))
-        shutil.copy(os.path.join(src, 'masks', file), os.path.join(dest, 'val_masks'))
+        try:
+            shutil.copy(os.path.join(src, 'masks', file[:4]+'.tif'), os.path.join(dest, 'val_masks'))
+        except:
+            pass
     return dest
 
 # COCO stuff
@@ -194,6 +200,7 @@ def create_sub_mask_annotation(sub_mask, include_keypoint=False):
         segmentation = np.array(poly.exterior.coords).ravel().tolist()
         segmentations.append(segmentation)
 
+        
     if include_keypoint:
         cb_params = {"x":0, "y":0, "visible":0, "clicked":False}
         cv2.imshow('image',np.asarray(sub_mask).astype(np.uint8)*255)
@@ -219,13 +226,17 @@ def create_segment_format(polygon, category_id, segment_id):
         "area": area
     }
     return segment
-def images_annotations_info(dataset_path, subset, include_keypoints):
+annot_reuse = {}
+annot_reuse_pan = {}
+def images_annotations_info(dataset_path, subset, include_keypoints, multi_image):
     # This id will be automatically increased as we go
     annotation_id = 0
     image_id = 0
     annotations = []
 
     annotations_panoptic = []
+
+    
     
     images = []
     
@@ -234,7 +245,11 @@ def images_annotations_info(dataset_path, subset, include_keypoints):
 
         # We make a reference to the original file in the COCO JSON file
         original_file_name = os.path.join(image)
-        mask_image = os.path.join(dataset_path, 'masks', image)
+
+        if multi_image:
+            mask_image = os.path.join(dataset_path, 'masks', image[:4]+'.tif')
+        else:
+            mask_image = os.path.join(dataset_path, 'masks', image)
 
         # Open the image and (to be sure) we convert it to RGB
         mask_image_open = Image.open(mask_image).convert("RGB")
@@ -244,7 +259,27 @@ def images_annotations_info(dataset_path, subset, include_keypoints):
         image = create_image_annotation(original_file_name, w, h, image_id)
         images.append(image)
 
+        if multi_image:
+            if (original_file_name[:4] in annot_reuse.keys()):
+                print('\nalreadey annotated: ', original_file_name)
+                print('reuse annotation: ', len(annot_reuse[original_file_name[:4]]))
+                for index in range(len(annot_reuse[original_file_name[:4]])):
+                    annotation = annot_reuse[original_file_name[:4]][index].copy()
+                    annotation["id"] = annotation_id
+                    annotation["image_id"] = image_id
+                    annotations.append(annotation)
+                    annotation_panoptic = annot_reuse_pan[original_file_name[:4]][index].copy()
+                    annotation_panoptic["file_name"] = original_file_name
+                    annotations_panoptic.append(annotation_panoptic)
+                    annotation_id += 1
+                image_id += 1
+                continue
+            annot_reuse[original_file_name[:4]] = []
+            annot_reuse_pan[original_file_name[:4]] = []
+
+
         sub_masks = create_sub_masks(mask_image_open, w, h)
+
         for color, sub_mask in sub_masks.items():
             try:
                 category_id = category_colors[color]
@@ -257,8 +292,6 @@ def images_annotations_info(dataset_path, subset, include_keypoints):
 
             # "annotations" info
             polygons, segmentations, keypoints = create_sub_mask_annotation(sub_mask, include_keypoints)
-
-
 
             # Check if we have classes that are a multipolygon
             if category_id in multipolygon_ids:
@@ -278,17 +311,21 @@ def images_annotations_info(dataset_path, subset, include_keypoints):
                     segments.append(create_segment_format(polygons[i], category_id, annotation_id))
                     annotations.append(annotation)
                     annotation_id += 1
+            if multi_image:
+                annot_reuse[original_file_name[:4]].append(annotation)
+                annot_reuse_pan[original_file_name[:4]].append({"image_id": image_id,"file_name": original_file_name,"segments_info": segments})
         annotations_panoptic.append({
             "image_id": image_id,
             "file_name": original_file_name,
             "segments_info": segments
         })
+        
         image_id += 1
     return images, annotations, annotations_panoptic, annotation_id
 
 
 
-def create_coco_dataset(dataset_path, train, val, include_keypoints):
+def create_coco_dataset(dataset_path, train, val, include_keypoints, multi_image):
     train_coco_format = get_coco_json_format()
     val_coco_format = get_coco_json_format()
 
@@ -301,8 +338,8 @@ def create_coco_dataset(dataset_path, train, val, include_keypoints):
     train_coco_format_panoptic["categories"] = create_category_annotation_panoptic(category_ids)
     val_coco_format_panoptic["categories"] = create_category_annotation_panoptic(category_ids)
 
-    train_images, train_annotations, train_annotations_panoptic, train_annotation_id = images_annotations_info(dataset_path, train, include_keypoints)
-    val_images, val_annotations, val_annotations_panoptic, val_annotation_id = images_annotations_info(dataset_path, val, include_keypoints)
+    train_images, train_annotations, train_annotations_panoptic, train_annotation_id = images_annotations_info(dataset_path, train, include_keypoints, multi_image)
+    val_images, val_annotations, val_annotations_panoptic, val_annotation_id = images_annotations_info(dataset_path, val, include_keypoints, multi_image)
 
     train_coco_format["images"], train_coco_format["annotations"], train_annotation_cnt = train_images, train_annotations, train_annotation_id
     val_coco_format["images"], val_coco_format["annotations"], val_annotation_cnt = val_images, val_annotations, val_annotation_id
@@ -516,6 +553,7 @@ if __name__ == '__main__':
     parser.add_argument('-oc', action='store_true', help='use one class, all tips are the same class')
     parser.add_argument('-ib', action='store_true', help='include background')
     parser.add_argument('-kp', action='store_true', help='include keypoint coordinates')
+    parser.add_argument('-mi', action='store_true', help='one mask for multiple images')
 
     args = parser.parse_args()
     print(args)
@@ -552,7 +590,7 @@ if __name__ == '__main__':
 
     if args.coco:
         print("Creating coco dataset...")
-        coco_dir, coco_panoptic_dir = create_coco_dataset(dataset_path, train, val, args.kp)
+        coco_dir, coco_panoptic_dir = create_coco_dataset(dataset_path, train, val, args.kp, args.mi)
         print("Coco dataset created at: ", coco_dir)
         print("Coco panoptic dataset created at: ", coco_panoptic_dir)
 # %%
