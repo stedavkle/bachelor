@@ -1,0 +1,192 @@
+\documentclass[
+a4paper, 12pt, % Papierformat, Schriftgröße
+titlepage, 		 % extra Titelseite statt einfacher Überschrift
+twoside,			 % beidseitiger Druck
+headsepline,	 % Trennlinie für die Kopfzeile
+BCOR5mm,			 % Binderand 5 mm
+idxtotoc, bibtotoc]{scrreprt}	% Index (soweit vorhanden) und Literaturliste 
+				       % im Inhaltsverzeichnis aufführen
+% Dokumentenklasse ist aus dem KOMA-Script-Paket die SCRReprt-Klasse.
+
+\usepackage{wsi-ra}
+
+% Eigene Pakete
+\usepackage{siunitx}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata,positioning,matrix,fit}
+\usepackage{tikz-uml}
+
+\usepackage{pgfplots}
+\usepackage{booktabs}
+\pgfplotsset{compat = newest}
+
+\newcommand*{\captionsource}[2]{%
+  \caption[{#1}]{#1 Quelle: #2}}
+
+\usepackage[T1]{fontenc}
+% JSON stuff
+%\usepackage{bera}% optional: just to have a nice mono-spaced font
+\usepackage{listings}
+\usepackage{xcolor}
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+\lstdefinelanguage{json}{
+    basicstyle=\normalfont\ttfamily,
+    numbers=left,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    backgroundcolor=\color{background},
+    literate=
+     *{0}{{{\color{numb}0}}}{1}
+      {1}{{{\color{numb}1}}}{1}
+      {2}{{{\color{numb}2}}}{1}
+      {3}{{{\color{numb}3}}}{1}
+      {4}{{{\color{numb}4}}}{1}
+      {5}{{{\color{numb}5}}}{1}
+      {6}{{{\color{numb}6}}}{1}
+      {7}{{{\color{numb}7}}}{1}
+      {8}{{{\color{numb}8}}}{1}
+      {9}{{{\color{numb}9}}}{1}
+      {:}{{{\color{punct}{:}}}}{1}
+      {,}{{{\color{punct}{,}}}}{1}
+      {\{}{{{\color{delim}{\{}}}}{1}
+      {\}}{{{\color{delim}{\}}}}}{1}
+      {[}{{{\color{delim}{[}}}}{1}
+      {]}{{{\color{delim}{]}}}}{1},
+}
+\usepackage{enumitem}
+\usepackage{adjustbox}
+%\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{float}
+\usepackage{dirtree}
+\usepackage{multicol}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Gestaltung der Titelseite     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\titlehead{\vspace{.5cm}\centering
+\textbf{\textsc{Eberhard-Karls-Universität Tübingen}}\\
+Wilhelm-Schickard-Institut für Informatik\\Lehrstuhl Kognitive Systeme}
+
+\subject{\large Bachelorarbeit Informatik}
+% Studien-, Bachelor-, Diplom- oder Masterarbeit
+
+% Der Titel
+\title{\begin{tabular}{p{11cm}}\centering\Large
+Einsatz von Deep Learning zur Erkennung von Messspitzen in Rasterelektronenmikroskopen
+\end{tabular}}
+
+% Der Name des Autors
+\author{\large David Stefan Kleindiek}
+\date{} % Hier kein Datum eintragen!
+
+% Die Betreuer sowie das Abgabedatum etc.
+% Zweitbetreuer: nicht bei Bachelor Informatik. Nur Master sowie Kognitionswissenschaften.
+% Zweitbetreuer ist nie der Betreuende Doktorand!
+\publishers{\normalsize\centering\begin{tabular}{p{3cm}p{8cm}}
+\textbf{Betreuer:} 	& Prof.\,Dr.\,rer.\,nat.~Andreas Zell\\
+			& Wilhelm-Schickard-Institut für Informatik\\
+      & \\
+			& Dr.~Matthias Kemmler\\
+			& Kleindiek Nanotechnik GmbH\
+      & \\
+\textbf{Begonnen am:}	& 1. Juli 2023\\
+ 			& \\
+\textbf{Beendet am:}	& \today
+\end{tabular}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Eidesstattliche Erklärung     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\uppertitleback{\ \\[4ex]\centering
+\begin{tabular}{>{\normalsize}p{4.5cm}>{\normalsize}p{4cm}}
+\large\textbf{Erklärung} & \\[4ex] \multicolumn{2}{p{8.5cm}}{\normalsize
+Hiermit versichere ich, diese Arbeit selbstständig verfasst und nur die
+angegebenen Quellen benutzt zu haben.}\\
+\\[2ex]\multicolumn{2}{p{8.5cm}}{\normalsize Tübingen am \today}\\[6ex]
+\begin{tabular}{p{4.2cm}}\cline{1-1}\\\end{tabular}&\\
+David Stefan Kleindiek
+\end{tabular}}
+\lowertitleback{} % Hier nichts eintragen!
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beginn des Dokumentes         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Titelei                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}		% kleine lateinische Seitenzahlen
+\maketitle
+\begin{abstract}
+\textbf{Kurzfassung. }\input{tex/00a_Kurzfassung}
+\end{abstract}
+
+%\input{tex/00b_Danksagung}
+
+\tableofcontents		% Inhaltsverzeichnis
+%\cleardoublepage		% Erzeugt neue Leerseite. Muss ggf. auskommentiert werden.
+\clearpage
+\pagenumbering{arabic}		% Ab hier mit arabischen Zahlen numerieren
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beginn der eigentlichen Arbeit%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\input{tex/01_Einfuehrung_vorlage}
+\input{tex/01_Einfuehrung}
+\input{tex/02_Grundlagen}
+\input{tex/02b_Grundlagen}
+\input{tex/03_VerwandteWerke}
+\input{tex/04_Durchfuehrung}
+\input{tex/05_Ergebnisse}
+% \input{tex/04_Diskussion}
+% \input{tex/05_Schlussfolgerungen}
+\input{tex/06_ZsfundAusblick}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Der Anhang                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{tex/0A_Abkuerzungsverzeichnis}
+\addcontentsline{toc}{chapter}{Abkürzungsverzeichnis}
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
+\listoffigures
+\clearpage
+\listoftables
+\addcontentsline{toc}{chapter}{\listtablename}
+% Erzeuge Glossar und Index.
+\input{tex/0B_Glossar}
+% Aufruf: makeindex -t Vorlage.glg -o Vorlage.gls -s Vorlage.ist Vorlage.glo
+\printglossary
+% \printindex
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Das Literaturverzeichnis      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Dadurch werden die Zitate mit abgekürzten Namen der Autoren generiert.
+\bibliographystyle{ra-alpha}
+\bibliography{tex/Literatur}
+
+\end{document}

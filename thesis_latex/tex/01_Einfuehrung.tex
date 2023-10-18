@@ -1,0 +1,36 @@
+\chapter{Einführung}
+\section{Motivation}
+Die Halbleiterindustrie befasste sich mit der Entwicklung und Herstellung von Halbleiterbauelementen. Diese Bauelemente sind das Herzstück vieler moderner Systeme, von Computern und Mobiltelefonen bis hin zu Fahrzeugen und medizinischen Geräten.
+Sie ist ein sich ständig weiterentwickelnder Bereich, der sich auf dem Weg zu immer kleineren und komplexeren Strukturen befindet.
+Heutige Strukturgrößen liegen unter \SI{10}{\nano\metre}, was etwa einem Zehntausendstel des Haardurchmessers entspricht.
+
+Die Fehleranalyse solch kleiner Strukturen ist eine hochspezialisierte Aufgabe, die jahrelange Erfahrung und Fachwissen erfordert, aber nach der Entwicklung und Produktion unerlässlich ist.
+Die Bedienung der dafür eingesetzten Geräte ist komplex, zudem kann die für die Analyse notwendige Bildgebung und Interaktion zu Beschädigungen führen, die unbedingt vermieden werden müssen.
+Ein wichtiger Schritt ist die zuverlässige Lokalisierung von Messspitzen. Diese Spitzen werden verwendet, um die Strukturen zu kontaktieren und Messungen an ihnen durchzuführen. Eine genaue Kenntnis der Position der Spitzen ist entscheidend, um Beschädigungen auszuschließen.
+
+Die Technologie der Fehleranalyse entwickelt sich ständig weiter, um Prozesse zu automatisieren. Die Herausforderungen bei der Bilderkennung sind jedoch aktuell noch nicht bewältigt. Klassische Algorithmen stoßen an ihre Grenzen, wenn sich Bildbedingungen und Hintergründe stark ändern, was zu unzureichenden oder ungenauen Lokalisierungen der Messspitzen führt.
+
+Die jüngsten Fortschritte in der Bilderkennung durch Deep Learning eröffnen jedoch neue Möglichkeiten zur Bewältigung dieser Herausforderungen.
+Deep Learning ist ein Teilbereich des maschinellen Lernens, der sich mit neuronalen Netzen befasst, die das Lernen und Denken des Menschen nachahmen sollen.
+Durch ihre Fähigkeit, komplexe Muster und Strukturen in großen Datenmengen zu erkennen, könnten Deep Learning-Algorithmen eine genauere und zuverlässigere Identifizierung von Messspitzen ermöglichen, selbst unter wechselnden Bedingungen und trotz unterschiedlicher Szenarien.
+
+Eine verbesserte Spitzenerkennung könnte dazu beitragen, die Genauigkeit und Zuverlässigkeit von Handhabungsprozessen zu erhöhen, sie zu automatisieren und die potenzielle Schadensrate zu verringern.
+Vor diesem Hintergrund ist es das Hauptziel dieser Arbeit, die Anwendung und Leistungsfähigkeit von Deep Learning-Techniken für die Spitzenerkennung zu untersuchen und zu evaluieren, um einen Beitrag zur weiteren Automatisierung und Optimierung der Prozesse in der Fehleranalyse zu leisten.
+\section{Problemstellung}
+Die Genauigkeitsanforderungen zur präzisen Erkennung und Lokalisierung der Messspitzen stellen hohe Ansprüche an die Qualität der verwendeten Bildverarbeitungsalgorithmen.
+Darüber hinaus stellen die Eigenschaften rasterelektronenmikroskopischer Bilder zusätzliche Herausforderungen dar.
+Aufgrund der Funktionsweise und der Anforderungen der Fehleranalyse enthalten die Bilder oft ein starkes Bildrauschen und große Kontrastschwankungen. Die große Variabilität der Probenstrukturen und Messspitzenformen je nach Betrachtungsart erschweren die Lokalisierung weiter.
+
+Deep Learning-Techniken haben das Potenzial, robust gegenüber Faktoren wie Bildrauschen und anderen Bildfehlern zu sein und können verschiedene Formen von Messspitzen berücksichtigen.
+Die Anwendung von Deep Learning auf das Problem der Erkennung von Messpitzen bringt jedoch spezifische Herausforderungen mit sich.
+Eine davon ist der Bedarf an umfangreichen und qualitativ hochwertigen Trainingsdaten. Die Erstellung solcher Datensätze ist zeit- und arbeitsintensiv und erfordert Expertenwissen, um die Spitzen in den Bildern korrekt zu annotieren.
+
+Eine weitere Herausforderung ist die Evaluation und Bewertung der Genauigkeit von Deep Learning Modellen. Dies ist im Kontext der Fehleranalyse besonders kritisch, da kleine Fehler zu großen Schäden führen können.
+Darüber hinaus sind Deep Learning-Modelle oft komplex und ihre Entscheidungen schwer zu interpretieren, was die Bewertung ihrer Leistung und die Verbesserung ihrer Genauigkeit zusätzlich erschwert.
+
+Mask R-CNN ist ein spezielles Deep Learning-Modell, das für die Erkennung und Lokalisierung von Objekten in Bildern entwickelt wurde. Es kann verwendet werden, um bestimmte Merkmale in Bildern zu identifizieren sowie zu lokalisieren.
+
+In dieser Arbeit soll daher untersucht werden, inwieweit Deep Learning-Modelle wie Mask R-CNN in der Lage sind, die Spitzen und die Konturen der einzelnen Spitzen in Bildern zu erkennen. Die genaue Definition der Problemstellung sowie die Bewertung der erzielten Ergebnisse sind entscheidend, um das Potenzial von Deep Learning zu bewerten.
+\section{Aufbau der Arbeit}
+Diese Arbeit ist in acht Hauptkapitel unterteilt. Kapitel zwei konzentriert sich auf die technischen Aspekte des Nanoprobing-Prozesses und beschreibt die verwendeten Geräte, einschließlich des Rasterelektronenmikroskops. Das dritte Kapitel befasst sich mit den Grundlagen neuronaler Netze, einschließlich Convolutional Neural Networks (CNNs), und beschreibt detailliert das verwendete Mask R-CNN-Modell. Relevante Arbeiten auf diesem Forschungsgebiet werden in Kapitel vier vorgestellt.
+ Kapitel fünf beschreibt die Durchführung der Arbeit, einschließlich der Implementierung, der Datenerfassung und des Trainingsprozesses. Das sechste Kapitel befasst sich mit der umfassenden Auswertung der Ergebnisse, gefolgt von einer Diskussion der Modellleistung im siebten Kapitel. Das achte Kapitel gibt eine abschließende Zusammenfassung und einen Ausblick auf mögliche zukünftige Forschungsrichtungen.

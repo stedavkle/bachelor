@@ -1,0 +1,30 @@
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: Task: bbox
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: AP,AP50,AP75,APs,APm,APl
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: 77.9362,93.7441,87.4705,26.0054,80.1869,85.5233
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: Task: keypoints
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: AP,AP50,AP75,APm,APl
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: 95.2251,95.7708,95.5641,96.7827,97.3995
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: Task: segm
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: AP,AP50,AP75,APs,APm,APl
+[07/27 11:21:02 d2.evaluation.testing]: copypaste: 54.3238,89.2861,58.9007,14.1851,50.6622,67.6312
+
+OrderedDict([('bbox',
+              {'AP': 77.93616157950294,
+               'AP50': 93.74413877538669,
+               'AP75': 87.47053280687297,
+               'APs': 26.00539751777376,
+               'APm': 80.18691759492016,
+               'APl': 85.5233255135347}),
+             ('keypoints',
+              {'AP': 95.22507834144932,
+               'AP50': 95.770793436895,
+               'AP75': 95.56412368906948,
+               'APm': 96.78273804710291,
+               'APl': 97.39954306713882}),
+             ('segm',
+              {'AP': 54.32375078345392,
+               'AP50': 89.28607672061925,
+               'AP75': 58.90065129631687,
+               'APs': 14.18507839071935,
+               'APm': 50.66221705930567,
+               'APl': 67.63118757880478})])

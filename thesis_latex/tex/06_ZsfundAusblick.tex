@@ -1,0 +1,27 @@
+\chapter{Zusammenfassung und Ausblick}
+Im Rahmen des Projekts wurde eine umfassende Pipeline erstellt, die von der Erstellung spezifischer Datensätze bis hin zum Training von Deep Learning-Modellen zur Erkennung von Messspitzen in REM-Bildern reicht. Dabei konnte eindrucksvoll gezeigt werden, dass Deep Learning der komplexen Aufgabe der Erkennung von Messspitzen gewachsen ist.
+
+Die Implementierung der Nanocontrol-Schnittstelle und der GeminiSEM-API in Python hat wesentlich zur Automatisierung der Datenerfassung und -verarbeitung beigetragen. Diese Implementierungen haben die Effizienz der Datenerfassung erheblich gesteigert und gleichzeitig die Genauigkeit und Zuverlässigkeit der Daten gewährleistet. Durch die Automatisierung dieser Prozesse konnte ein umfangreicher Datensatz für das Nanoprobing erstellt werden.
+Die Entwicklung der Python-Klassen, die die Manipulatoren und das REM repräsentieren, hat eine einfache und sichere Bedienung dieser Geräte ermöglicht. Darüber hinaus wurde die Robustheit des Gesamtsystems verbessert, indem standardisierte und getestete Methoden für die Interaktion mit den Geräten bereitgestellt wurden.
+Trotz dieser erfolgreichen Implementierungen gibt es immer noch Raum für Verbesserungen und zukünftige Forschung. Beispielsweise könnte die Effizienz der Datenerfassung weiter verbessert werden, indem die Encoder des Prober Shuttles verwendet werden, um komplexere Pfade mit den Spitzen abzufahren.
+
+Die Herausforderung der zeitaufwändigen Datenannotation konnte dank der entwickelten Methode zur Mehrfachverwendung einer Maske und der Verwendung von Werkzeugen wie Photoshop, die den Annotationsprozess erheblich erleichtern, erfolgreich gemeistert werden. 
+
+Die Arbeit gibt nicht nur einen detaillierten Einblick in die Stärken und Möglichkeiten von Mask R-CNN, sondern identifiziert auch Schwierigkeiten und Probleme.
+Die entwickelten und trainierten Modelle bieten sehr gute Voraussetzungen für die Automatisierung. Die Modelle erreichen eine hohe Genauigkeit und können bereits im jetzigen Zustand zur visuellen Kontrolle der Steuerung eingesetzt werden. Werden gefährliche Manöver der Spitzen erkannt, kann präventiv eingegriffen werden, um Kollisionen zu vermeiden. Die Modelle bilden somit die Grundlage für einen rechnergestützten Assistenten, der den hochkomplexen Prozess der Fehleranalyse vereinfacht, bestimmte Abläufe automatisiert und damit den gesamten Prozess auch für Personen mit geringer Expertise zugänglich macht.
+
+Darüber hinaus werden Lösungsansätze vorgestellt und erprobt, die auf den identifizierten Herausforderungen aufbauen. Durch die Analyse und Diskussion der Ergebnisse konnten viele wichtige Erkenntnisse gewonnen werden, die zur Weiterentwicklung des Forschungsgebietes beitragen können.
+Die entwickelten Methoden ermöglichen eine schnelle Anpassung und Weiterentwicklung.
+
+Somit stellt diese Arbeit nicht nur einen erfolgreichen Schritt in der Erkennung von Messspitzen mittels Deep Learning dar, sondern legt auch einen Grundstein für die zukünftige Entwicklung und Forschung in diesem Bereich.
+
+\section*{Ausblick}
+Die nächsten Schritte, die auf der Grundlage dieser Arbeit unternommen werden können, bestehen darin, die entwickelten Modelle produktions- und einsatzfähig zu machen. Dazu wird vorgeschlagen, die Modelle mit Hilfe der ONNX Runtime \cite{onnxruntime} und Nvidia TensorRT \cite{tensorrt} für die Nvidia Jetson Plattform \cite{jetson} zu optimieren.
+Dadurch kann eine geringe Inferenzzeit erreicht werden, die für den Einsatz in Echtzeit erforderlich ist.
+Für eine robuste Nadelverfolgung über mehrere Bilder sollte zusätzlich zur Erkennung durch Mask R-CNN ein Tracker nachgeschaltet werden, der die Detektionen nachfolgender Bilder den vorherigen Detektionen zuordnet und dabei ebenfalls die Ansteuerungsbefehle des Nanocontrols berücksichtigt. Hierfür können Tracking-Algorithmen wie SORT oder DeepSORT verwendet werden \cite{Bewley2016_sort} \cite{Wojke2017simple}.
+
+Die zuvor vorgeschlagenen Verbesserungen sollten ebenfalls berücksichtigt werden.
+Es sollte eine eigene Evaluierungsmethode entwickelt werden, wofür eine große Anzahl speziell angepasster Datensätze benötigt wird.
+Eine gezielte Erweiterung des entwickelten Datensatzes ist ebenfalls sinnvoll.
+Neben Mask R-CNN sollten weitere Netzarchitekturen auf dem entwickelten Datensatz trainiert und verglichen werden. Netze wie das von Wang \textit{et al.} entwickelte HRNet könnten eine noch genauere Lokalisierung ermöglichen \cite{SunXLW19} \cite{wang2019deep}. Und YOLOv7 eine schnellere Detektion, die besser für eine Echtzeitanwendung geeignet ist \cite{Wang_2023_CVPR}.
+Auch eine Kombination verschiedener Architekturen oder eine gezielte Anpassung ist denkbar.
