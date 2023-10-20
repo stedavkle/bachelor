@@ -4,15 +4,15 @@
 Die Halbleiterindustrie, eine sich ständig weiterentwickelnde und komplexe Branche, die sich auf Strukturen unter 10 Nanometern reduziert hat, steht vor ständigen Herausforderungen bei der Fehleranalyse der entwickelten Strukturen. Diese Bachelorarbeit konzentriert sich auf den Einsatz von Deep Learning, insbesondere des Mask R-CNN Modells, zur Detektion von Messspitzen in rasterelektronenmikroskopischen Bildern.
 
 <p align="center">
-  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/1.gif" width="300" />
-  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/2.gif" width="300" />
-  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/3.gif" width="300" />
+  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/1.gif" width="200" />
+  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/2.gif" width="200" />
+  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/3.gif" width="200" />
 </p>
 
 <p align="center">
-  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/4.gif" width="300" />
-  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/5.gif" width="300" />
-  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/6.gif" width="300" />
+  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/4.gif" width="200" />
+  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/5.gif" width="200" />
+  <img src="https://github.com/stedavkle/bachelor/blob/main/gifs/6.gif" width="200" />
 </p>
 
 
